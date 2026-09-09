@@ -1,4 +1,3 @@
-"""Нормализация текста и нечёткий поиск (бывший блок search из utils.py)."""
 import re
 import unicodedata
 import difflib
@@ -10,7 +9,6 @@ _NORMALIZE_MAP = str.maketrans({
 
 
 def normalize_text(text: str) -> str:
-    """Нормализует текст для поиска: нижний регистр, ё→е, NFKD, удаление лишних символов."""
     if not text:
         return ""
     text = unicodedata.normalize("NFKD", text)
@@ -22,7 +20,6 @@ def normalize_text(text: str) -> str:
 
 
 def token_matches(token: str, haystack: str) -> bool:
-    """Проверяет токен в haystack: точное вхождение или нечёткое (fuzzy) для опечаток."""
     if token in haystack:
         return True
     hay_nospace = haystack.replace(" ", "")

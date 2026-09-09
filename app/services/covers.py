@@ -1,13 +1,3 @@
-"""Извлечение и хранение обложек треков/альбомов.
-
-Источники (по приоритету):
-1. Встроенная обложка в тегах (ID3 APIC, FLAC pictures, MP4 covr, Vorbis METADATA_BLOCK_PICTURE, ASF WM/Picture)
-2. Файл-обложка рядом с треком: cover.jpg/png/webp, folder.jpg, front.jpg, album.jpg ...
-
-Хранение: DATA_DIR/covers/{track_id}.{ext} и album_{album_id}.{ext}.
-Если Pillow доступен — ресайзим до 600px и конвертируем в JPEG для экономии.
-Без Pillow — сохраняем байты как есть.
-"""
 import base64
 from pathlib import Path
 
@@ -35,7 +25,6 @@ def _guess_ext(mime: str) -> str:
 
 
 def extract_embedded_cover(filepath: Path):
-    """Возвращает (bytes, mime) или (None, None)."""
     try:
         from mutagen import File as MutagenFile
 
@@ -44,13 +33,11 @@ def extract_embedded_cover(filepath: Path):
             return None, None
         tags = audio.tags
 
-        # --- MP3 / ID3: APIC ---
         try:
             from mutagen.id3 import APIC
 
             apics = tags.getall("APIC") if hasattr(tags, "getall") else []
             if apics:
-                # предпочитаем front cover (type 3), иначе первую
                 front = [p for p in apics if getattr(p, "type", 3) == 3]
                 pic = front[0] if front else apics[0]
                 data = getattr(pic, "data", None)
@@ -60,11 +47,9 @@ def extract_embedded_cover(filepath: Path):
         except Exception:
             pass
 
-        # --- MP4/M4A: covr ---
         try:
             if "covr" in tags and tags["covr"]:
                 blob = bytes(tags["covr"][0])
-                # эвристика mime по сигнатуре
                 if blob[:8].startswith(b"\x89PNG"):
                     return blob, "image/png"
                 if blob[:3] == b"GIF":
@@ -75,7 +60,6 @@ def extract_embedded_cover(filepath: Path):
         except Exception:
             pass
 
-        # --- FLAC: pictures ---
         try:
             pics = getattr(audio, "pictures", None)
             if pics:
@@ -84,7 +68,6 @@ def extract_embedded_cover(filepath: Path):
         except Exception:
             pass
 
-        # --- Vorbis (ogg/opus): METADATA_BLOCK_PICTURE (base64) ---
         try:
             mbp = tags.get("METADATA_BLOCK_PICTURE") or tags.get("metadata_block_picture")
             if mbp:
@@ -93,7 +76,6 @@ def extract_embedded_cover(filepath: Path):
                 raw = base64.b64decode(str(mbp[0]))
                 pic = Picture(raw)
                 return bytes(pic.data), (pic.mime or "image/jpeg")
-            # старый вариант: COVERART
             ca = tags.get("COVERART") or tags.get("coverart")
             if ca:
                 blob = base64.b64decode(str(ca[0]))
@@ -101,7 +83,6 @@ def extract_embedded_cover(filepath: Path):
         except Exception:
             pass
 
-        # --- WMA/ASF: WM/Picture ---
         try:
             for key in ("WM/Picture", "WM/Picture "):
                 if key in tags:
@@ -112,7 +93,6 @@ def extract_embedded_cover(filepath: Path):
         except Exception:
             pass
 
-        # --- Generic fallback: ищем объект с .data у тегов ---
         try:
             for v in tags.values():
                 items = v if isinstance(v, list) else [v]
@@ -129,7 +109,6 @@ def extract_embedded_cover(filepath: Path):
 
 
 def find_folder_cover(filepath: Path):
-    """Ищет cover/folder/front рядом с файлом. Возвращает Path или None."""
     try:
         parent = filepath.parent
         if not parent.exists():
@@ -138,7 +117,6 @@ def find_folder_cover(filepath: Path):
             cand = parent / name
             if cand.is_file() and cand.stat().st_size > 0:
                 return cand
-        # fallback: любой *.jpg/png в папке с именем cover*/folder*/front*/album*
         for cand in parent.glob("*"):
             if not cand.is_file():
                 continue
@@ -152,7 +130,6 @@ def find_folder_cover(filepath: Path):
 
 
 def _normalize_image(data: bytes, mime: str, max_size: int = 600) -> tuple[bytes, str]:
-    """Ресайз + JPEG через Pillow если доступен, иначе как есть."""
     try:
         from PIL import Image
         import io
@@ -176,7 +153,6 @@ def _normalize_image(data: bytes, mime: str, max_size: int = 600) -> tuple[bytes
 
 
 def save_cover_for_track(track_id: int, audio_path: Path) -> str | None:
-    """Извлекает обложку для трека и сохраняет в COVERS_DIR. Возвращает имя файла или None."""
     COVERS_DIR.mkdir(parents=True, exist_ok=True)
     data, mime = extract_embedded_cover(audio_path)
     if not data:
@@ -193,7 +169,6 @@ def save_cover_for_track(track_id: int, audio_path: Path) -> str | None:
         return None
     data, mime = _normalize_image(data, mime)
     ext = _guess_ext(mime)
-    # чистим старые варианты расширений этого трека
     for old in COVERS_DIR.glob(f"{track_id}.*"):
         try:
             old.unlink()
@@ -209,7 +184,6 @@ def save_cover_for_track(track_id: int, audio_path: Path) -> str | None:
 
 
 def save_cover_for_album(album_id: int, src_cover_name: str | None) -> str | None:
-    """Копирует обложку трека как обложку альбома. Возвращает имя файла или None."""
     if not src_cover_name:
         return None
     COVERS_DIR.mkdir(parents=True, exist_ok=True)
@@ -218,7 +192,6 @@ def save_cover_for_album(album_id: int, src_cover_name: str | None) -> str | Non
         return None
     ext = src.suffix or ".jpg"
     dest = COVERS_DIR / f"album_{album_id}{ext}"
-    # чистим старые
     for old in COVERS_DIR.glob(f"album_{album_id}.*"):
         if old != dest:
             try:
@@ -237,7 +210,7 @@ def save_cover_for_album(album_id: int, src_cover_name: str | None) -> str | Non
 def cover_file_response_path(stored: str | None) -> Path | None:
     if not stored:
         return None
-    p = COVERS_DIR / Path(stored).name  # защита от traversal
+    p = COVERS_DIR / Path(stored).name
     return p if p.is_file() else None
 
 

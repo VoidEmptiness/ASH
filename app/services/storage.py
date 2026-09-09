@@ -1,4 +1,3 @@
-"""Работа с файлами и папками плейлистов (аналог services/storage.py в Video-Library)."""
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -10,7 +9,6 @@ from .metadata import safe_folder_name
 
 
 def get_playlist_folder(playlist: Playlist, ensure_exists: bool = True) -> Path:
-    """Возвращает Path папки плейлиста, создаёт её если нужно."""
     if playlist.folder:
         folder = MUSIC_DIR / playlist.folder
     else:
@@ -42,7 +40,6 @@ def get_playlist_folder(playlist: Playlist, ensure_exists: bool = True) -> Path:
 
 
 def ensure_playlist_folders(db: Session):
-    """Для существующих плейлистов без folder — создать. Пропускаем виртуальные (Liked Songs)."""
     for pl in db.query(Playlist).all():
         if pl.name == LIKED_SONGS_NAME:
             continue
@@ -74,7 +71,6 @@ def file_iterator(path: Path, start: int = 0, end: int = None, chunk_size: int =
 
 
 def resolve_track_path(track) -> Path:
-    """Возвращает реальный путь к файлу трека (filepath или MUSIC_DIR/filename)."""
     p = Path(track.filepath)
     if not p.exists():
         p = MUSIC_DIR / track.filename

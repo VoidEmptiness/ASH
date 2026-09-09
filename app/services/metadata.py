@@ -1,4 +1,3 @@
-"""Работа с аудиофайлами: метаданные, проверки типов, имена (бывший блок metadata из utils.py)."""
 import re
 from pathlib import Path
 from mutagen import File as MutagenFile
@@ -7,7 +6,6 @@ from ..config import SUPPORTED_EXTENSIONS
 
 
 def extract_metadata(filepath: Path) -> dict:
-    """Извлекает метаданные из аудиофайла."""
     try:
         audio = MutagenFile(str(filepath), easy=True)
         if audio is None:
@@ -77,7 +75,6 @@ def safe_filename(name: str) -> str:
 
 
 def safe_folder_name(name: str) -> str:
-    # для папок плейлистов: убираем слэши, оставляем буквы/цифры/пробел/дефис/подчеркивание
     keep = "-_ "
     cleaned = "".join(c for c in name if c.isalnum() or c in keep).strip()
     cleaned = re.sub(r"\s+", " ", cleaned).strip()

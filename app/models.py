@@ -31,9 +31,9 @@ class Track(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False, index=True)
     artist = Column(String, default="Unknown Artist", index=True)
-    album = Column(String, default="Unknown Album", index=True)  # legacy string for compatibility
+    album = Column(String, default="Unknown Album", index=True)
     album_id = Column(Integer, ForeignKey("albums.id", ondelete="SET NULL"), nullable=True, index=True)
-    duration = Column(Float, default=0.0)  # seconds
+    duration = Column(Float, default=0.0)
     filename = Column(String, nullable=False, unique=True)
     filepath = Column(String, nullable=False)
     cover_path = Column(String, nullable=True)
@@ -56,6 +56,6 @@ class Playlist(Base):
     description = Column(String, default="")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     cover_color = Column(String, default="#2a2a2a")
-    folder = Column(String, nullable=True)  # относительная папка в MUSIC_DIR, например "My Playlist"
+    folder = Column(String, nullable=True)
 
     tracks = relationship("Track", secondary=playlist_tracks, back_populates="playlists")

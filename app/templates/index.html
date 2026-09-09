@@ -12,7 +12,6 @@
 <body>
   <div class="grain"></div>
 
-  <!-- Header -->
   <header class="topbar">
     <div class="brand">
       <div class="logo"><i class="ti ti-wave-sine"></i></div>
@@ -33,7 +32,6 @@
   </header>
 
   <div class="layout">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <nav class="nav">
         <button class="nav-item active" data-view="all"><i class="ti ti-library"></i> Вся фонотека</button>
@@ -48,7 +46,6 @@
           <button id="newPlaylistBtn" class="mini-btn"><i class="ti ti-plus"></i></button>
         </div>
         <div id="playlistList" class="playlist-list">
-          <!-- injected -->
         </div>
         <div id="newPlaylistForm" class="new-pl-form hidden">
           <input id="plName" placeholder="Название плейлиста" />
@@ -68,7 +65,6 @@
     </aside>
     <div id="sidebarResizer" class="resizer" title="Тяни чтобы изменить ширину"></div>
 
-    <!-- Main -->
     <main class="main">
       <div class="main-head">
         <div>
@@ -103,7 +99,6 @@
             </tr>
           </thead>
           <tbody id="trackBody">
-            <!-- rows -->
           </tbody>
         </table>
         <div id="emptyState" class="empty hidden">
@@ -115,7 +110,6 @@
     </main>
   </div>
 
-  <!-- Player -->
   <footer class="player">
     <div class="player-left">
       <div class="cover" id="playerCover"><i class="ti ti-music"></i></div>
@@ -148,7 +142,6 @@
     <audio id="audio" preload="metadata"></audio>
   </footer>
 
-  <!-- Playlist manager / Liked Songs picker -->
   <div id="plPicker" class="picker hidden">
     <h4><i class="ti ti-playlist-add"></i> Управление плейлистами</h4>
     <div id="pickerList"></div>
@@ -160,7 +153,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Custom Confirm Modal -->
   <div id="confirmModal" class="modal-overlay hidden">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
       <div class="modal-icon"><i class="ti ti-alert-triangle"></i></div>

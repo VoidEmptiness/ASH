@@ -8,7 +8,7 @@ let queue = [];
 let currentIdx = -1;
 let activePlaylistId = null;
 let viewMode = 'all';
-let repeatMode = 'off'; // off | all | one
+let repeatMode = 'off';
 let pendingUploadPlaylistId = null;
 
 const audio = $('#audio');
@@ -20,14 +20,12 @@ const viewSubtitle = $('#viewSubtitle');
 const artistsView = $('#artistsView');
 const albumsView = $('#albumsView');
 
-// --- XSS helpers ---
 function escapeHtml(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function escapeAttr(s){ return escapeHtml(s); }
 function sanitizeColor(c){ return /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#2a2a2a'; }
 
 const LIKED_SONGS_NAME = 'Liked Songs';
 
-// --- View State Persistence ---
 const STATE_KEY = 'ash_ui_state_v2';
 function saveViewState(){
   try{
@@ -51,7 +49,6 @@ function getSavedState(){
   }catch(e){ return null; }
 }
 
-// --- Toast ---
 function toast(msg, ms=2400){
   const t = $('#toast');
   t.textContent = msg;
@@ -59,7 +56,6 @@ function toast(msg, ms=2400){
   setTimeout(()=>t.classList.add('hidden'), ms);
 }
 
-// --- Custom Confirm (replaces native confirm) ---
 let _confirmResolve = null;
 let _confirmBound = false;
 function ashConfirm(message, {title='Подтвердите действие', okText='Удалить', cancelText='Отмена', danger=true}={}){
@@ -78,7 +74,6 @@ function ashConfirm(message, {title='Подтвердите действие', o
   okBtn.classList.toggle('danger', !!danger);
   overlay.classList.remove('hidden');
   overlay.style.display = 'flex';
-  // focus ok for keyboard
   setTimeout(()=> okBtn.focus(), 30);
 
   return new Promise(resolve=>{
@@ -104,7 +99,6 @@ function ashConfirm(message, {title='Подтвердите действие', o
       document.removeEventListener('keydown', onKey);
       _confirmBound = false;
     }
-    // ensure single binding per open
     if(_confirmBound) cleanup();
     _confirmBound = true;
     okBtn.addEventListener('click', onOk);
@@ -114,7 +108,6 @@ function ashConfirm(message, {title='Подтвердите действие', o
   });
 }
 
-// --- Fetch helpers ---
 async function api(path, opts={}){
   const res = await fetch(path, opts);
   if(!res.ok) throw new Error(await res.text());
@@ -136,7 +129,6 @@ function totalDurationLabel(sec){
   return `${m} мин`;
 }
 
-// --- Loaders ---
 async function loadStats(){
   try{
     const s = await api('/api/stats');
@@ -151,7 +143,6 @@ async function loadTracks(){
   const params = new URLSearchParams({sort, order});
   if(q) params.set('search', q);
   if(viewMode==='artists' || viewMode==='albums'){
-    // handled separately
   }
   const data = await api('/api/tracks?'+params.toString());
   tracks = data;
@@ -184,7 +175,6 @@ async function loadAlbums(){
     return;
   }
   albumsView.classList.add('albums-grid');
-  // поддержка старого формата (strings) и нового (AlbumResponse)
   if(typeof arr[0] === 'string'){
     albumsView.innerHTML = arr.map(a=>`<button class="chip" data-album="${escapeAttr(a)}">${escapeHtml(a)}</button>`).join('');
   } else {
@@ -205,7 +195,6 @@ async function loadAlbums(){
       const albumId = ch.dataset.albumId;
       const albumTitle = ch.dataset.album;
       if(albumId){
-        // запрос через БД по album_id
         const data = await api('/api/tracks?album_id=' + albumId);
         filtered = data;
       } else {
@@ -224,7 +213,6 @@ function applyFilter(){
     const pl = playlists.find(p=>p.id===activePlaylistId);
     filtered = pl ? pl.tracks : [];
   } else {
-    // if view is recent: last 20 by created_at
     if(viewMode==='recent'){
       filtered = [...tracks].slice(0,20);
     } else {
@@ -237,7 +225,6 @@ function applyFilter(){
 
 function renderPlaylists(){
   const list = $('#playlistList');
-  // Liked Songs всегда первым
   const sorted = [...playlists].sort((a,b)=>{
     if(a.name===LIKED_SONGS_NAME) return -1;
     if(b.name===LIKED_SONGS_NAME) return 1;
@@ -303,7 +290,6 @@ function renderPlaylists(){
       toast('Плейлист удалён');
     });
   });
-  // drag & drop на плейлист — сразу загрузка в него
   list.querySelectorAll('.pl-item').forEach(el=>{
     el.addEventListener('dragover', e=>{ e.preventDefault(); el.style.borderColor='var(--ash-light)'; el.style.background='var(--surface-2)'; });
     el.addEventListener('dragleave', ()=>{ el.style.borderColor=''; el.style.background=''; });
@@ -315,7 +301,6 @@ function renderPlaylists(){
     });
   });
 
-  // picker
   const pickerList = $('#pickerList');
   if(pickerList){
     pickerList.innerHTML = playlists.map(p=>`<button data-pick="${p.id}">${escapeHtml(p.name)}</button>`).join('');
@@ -405,7 +390,6 @@ function renderTracks(){
         await api(`/api/tracks/${id}`, {method:'DELETE'});
       }catch(err){ toast('Ошибка удаления'); if(row){row.style.opacity=''; b.disabled=false;} return; }
       toast('Трек удалён — пепел развеян');
-      // optimistic update без перезагрузки страницы
       tracks = tracks.filter(x=>x.id!==id);
       filtered = filtered.filter(x=>x.id!==id);
       playlists.forEach(pl=>{ pl.tracks = pl.tracks.filter(x=>x.id!==id); pl.track_count = pl.tracks.length; });
@@ -428,15 +412,11 @@ function renderTracks(){
       renderPlaylists();
       saveViewState();
       try{ await loadStats(); }catch(e){}
-      // синхронизируем с сервером в фоне (перезагрузит плейлисты/треки если рассинхрон)
       loadPlaylists().then(()=>{ if(activePlaylistId) applyFilter(); saveViewState(); }).catch(()=>{});
-      // не ждём loadTracks чтобы не мигал, но обновим скрыто
-      // await loadTracks() можно вызвать если нужно, но optimistic уже актуален
     });
   });
 }
 
-// --- Player ---
 function setPlayerCover(t){
   const el = $('#playerCover');
   if(!el) return;
@@ -483,7 +463,7 @@ function updateRepeatUI(){
     btn.style.borderColor = 'var(--ash-light)';
     btn.title = 'Повтор плейлиста — клик для повтора трека';
     btn.classList.add('active');
-  } else { // one
+  } else {
     btn.innerHTML = '<i class="ti ti-repeat-once"></i>';
     btn.style.color = 'var(--ash-light)';
     btn.style.borderColor = 'var(--ash-light)';
@@ -514,7 +494,6 @@ function updateUploadLabel(){
 function updatePlayerHeart(){
   const btn = $('#likeBtn');
   if(!btn) return;
-  // всегда видима
   btn.style.display='grid'; btn.style.visibility='visible'; btn.style.opacity='1';
   const cur = queue[currentIdx];
   if(!cur || currentIdx<0){
@@ -560,7 +539,6 @@ async function uploadFiles(files, targetPlaylistId){
     await loadStats();
     await loadPlaylists();
     updateUploadLabel();
-    // если загружали в активный плейлист — обновить отображение
     if(targetId && targetId===activePlaylistId){
       applyFilter();
       renderPlaylists();
@@ -569,7 +547,6 @@ async function uploadFiles(files, targetPlaylistId){
 }
 
 function handleEnded(){
-  // вызывается при окончании трека
   if(repeatMode === 'one'){
     audio.currentTime = 0;
     audio.play().catch(()=>{});
@@ -580,7 +557,6 @@ function handleEnded(){
     if(repeatMode === 'all'){
       n = 0;
     } else {
-      // off — останавливаемся в конце очереди
       $('#playBtn').innerHTML = '<i class="ti ti-player-play"></i>';
       return;
     }
@@ -590,13 +566,12 @@ function handleEnded(){
 
 function next(){
   if(!queue.length) return;
-  // ручной клик "следующий" — всегда идёт к следующему, даже в режиме one
   let n = currentIdx + 1;
   if(n >= queue.length){
     if(repeatMode === 'all' || repeatMode === 'one'){
-      n = 0; // в обоих режимах с повтором — закольцевать
+      n = 0;
     } else {
-      return; // off — в конце стоп
+      return;
     }
   }
   playAt(n);
@@ -608,14 +583,13 @@ function prev(){
     if(repeatMode === 'all' || repeatMode === 'one'){
       p = queue.length - 1;
     } else {
-      p = 0; // off — не закольцовывать, остаться в начале
+      p = 0;
       if(currentIdx === 0){ audio.currentTime = 0; return; }
     }
   }
   playAt(p);
 }
 
-// events
 $('#playBtn').addEventListener('click', togglePlay);
 $('#nextBtn').addEventListener('click', next);
 $('#prevBtn').addEventListener('click', prev);
@@ -684,7 +658,6 @@ $('#volume').addEventListener('input', e=>{
 });
 document.querySelector('.vol-icon').addEventListener('click', ()=>{
   if(audio.muted || audio.volume === 0){
-    // unmute
     audio.muted = false;
     const restore = prevVolume > 0.05 ? prevVolume : 0.85;
     audio.volume = restore;
@@ -700,7 +673,6 @@ document.querySelector('.vol-icon').addEventListener('click', ()=>{
 });
 audio.addEventListener('volumechange', ()=>{ updateVolumeIcon(); saveVolume(); });
 
-// search debounce
 let sTimer;
 searchInput.addEventListener('input', ()=>{
   clearTimeout(sTimer);
@@ -736,7 +708,6 @@ $('#uploadInput').addEventListener('change', async (e)=>{
   updateUploadLabel();
   e.target.value='';
 });
-// drag & drop в основную область — загрузка (в активный плейлист если выбран)
 const mainArea = document.querySelector('.main');
 if(mainArea){
   mainArea.addEventListener('dragover', e=>{ e.preventDefault(); mainArea.style.outline='1px dashed var(--ash-light)'; });
@@ -746,7 +717,6 @@ if(mainArea){
     const files = e.dataTransfer.files;
     if(files.length) await uploadFiles(files);
   });
-  // сохраняем скролл для восстановления после перезагрузки
   let scrollTimer;
   mainArea.addEventListener('scroll', ()=>{
     clearTimeout(scrollTimer);
@@ -761,7 +731,6 @@ if(mainArea){
   }
   window.addEventListener('beforeunload', saveViewState);
 }
-// sidebar resizer
 (function(){
   const sidebar = document.querySelector('.sidebar');
   const resizer = document.getElementById('sidebarResizer');
@@ -807,7 +776,6 @@ if(mainArea){
   });
 })();
 
-// nav
 $$('.nav-item').forEach(btn=>{
   btn.addEventListener('click', async ()=>{
     $$('.nav-item').forEach(b=>b.classList.remove('active'));
@@ -844,7 +812,6 @@ $$('.nav-item').forEach(btn=>{
   });
 });
 
-// playlists create
 $('#newPlaylistBtn').addEventListener('click', ()=> $('#newPlaylistForm').classList.toggle('hidden'));
 $('#createPlBtn').addEventListener('click', async ()=>{
   const name = $('#plName').value.trim();
@@ -857,7 +824,6 @@ $('#createPlBtn').addEventListener('click', async ()=>{
   toast('Плейлист создан');
 });
 
-// picker — Liked Songs + управление плейлистами
 let pickerTrackId = null;
 function getLikedPlaylist(){ return playlists.find(p=>p.name===LIKED_SONGS_NAME); }
 async function handleAddClick(tid){
@@ -865,11 +831,9 @@ async function handleAddClick(tid){
   if(!liked){ toast('Liked Songs не найден'); return; }
   const inLiked = liked.tracks.some(t=>t.id===tid);
   if(!inLiked){
-    // первый клик — сразу в Liked Songs
     try{
       await api(`/api/playlists/${liked.id}/tracks/${tid}`, {method:'POST'});
       toast('Добавлено в Liked Songs');
-      // optimistic
       const t = tracks.find(x=>x.id===tid) || filtered.find(x=>x.id===tid);
       if(t && !liked.tracks.some(x=>x.id===tid)){
         liked.tracks.push(t);
@@ -879,7 +843,6 @@ async function handleAddClick(tid){
       renderTracks();
     }catch(e){ toast('Ошибка'); }
   } else {
-    // уже в избранном — открываем менеджер
     openPlaylistManager(tid);
   }
 }
@@ -890,7 +853,6 @@ function openPlaylistManager(tid){
   const t = tracks.find(x=>x.id===tid) || filtered.find(x=>x.id===tid);
   const title = t ? `${escapeHtml(t.title)} — ${escapeHtml(t.artist)}` : 'Выберите плейлисты';
   picker.querySelector('h4').innerHTML = `<i class="ti ti-playlist-add"></i> Добавить в плейлист <span style="opacity:.6;font-weight:400;font-size:11px;display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px">${title}</span>`;
-  // Spotify-like: поиск по плейлистам + список с чекмарками + кнопка создать
   const searchHtml = `<div style="margin-bottom:10px"><input id="plSearch" placeholder="Найти плейлист" style="width:100%;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;padding:8px 10px;border-radius:6px;font-size:12px;outline:none"></div>`;
   const itemsHtml = playlists.map(p=>{
     const checked = p.tracks.some(t=>t.id===tid);
@@ -908,7 +870,6 @@ function openPlaylistManager(tid){
   const createHtml = `<div id="plCreateRow" style="display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:6px;cursor:pointer;margin-top:8px;border-top:1px solid #2a2a2a"><i class="ti ti-plus" style="background:#fff;color:#000;border-radius:50%;width:28px;height:28px;display:grid;place-items:center"></i> <span style="font-size:13px">Создать плейлист</span></div>`;
   list.innerHTML = searchHtml + `<div id="plRows" style="max-height:240px;overflow-y:auto">` + itemsHtml + `</div>` + createHtml;
   picker.classList.remove('hidden');
-  // поиск фильтр
   const searchInp = list.querySelector('#plSearch');
   if(searchInp){
     searchInp.addEventListener('input', ()=>{
@@ -921,7 +882,6 @@ function openPlaylistManager(tid){
     });
     setTimeout(()=>searchInp.focus(), 30);
   }
-  // Spotify: клик по строке — мгновенно toggle (без Save)
   list.querySelectorAll('.spotify-row').forEach(row=>{
     row.addEventListener('click', async ()=>{
       const pid = Number(row.dataset.pick);
@@ -951,7 +911,6 @@ function openPlaylistManager(tid){
     row.addEventListener('mouseenter', ()=> row.style.background='#2a2a2a');
     row.addEventListener('mouseleave', ()=> row.style.background='transparent');
   });
-  // создать плейлист быстро
   const createRow = list.querySelector('#plCreateRow');
   if(createRow){
     createRow.addEventListener('click', async ()=>{
@@ -961,15 +920,13 @@ function openPlaylistManager(tid){
         const pl = await api('/api/playlists', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, cover_color:'#1db954'})});
         toast('Плейлист создан');
         await loadPlaylists();
-        // сразу добавляем трек в новый плейлист
         await api(`/api/playlists/${pl.id}/tracks/${tid}`, {method:'POST'});
         toast('Добавлено в '+name);
         await loadPlaylists();
-        openPlaylistManager(tid); // перерисуем
+        openPlaylistManager(tid);
       }catch(e){ toast('Ошибка создания'); }
     });
   }
-  // биндим Save/Cancel один раз (Save теперь просто закрывает, т.к. уже мгновенно)
   const saveBtn = $('#pickerSave');
   const cancelBtn = $('#pickerCancel');
   if(saveBtn && !saveBtn._bound){
@@ -982,7 +939,6 @@ function openPlaylistManager(tid){
       updatePlayerHeart();
     });
     cancelBtn.addEventListener('click', ()=> picker.classList.add('hidden'));
-    // также клик вне закрывает, но изменения уже применены мгновенно, так что просто закрываем
   }
 }
 function openPicker(tid){ openPlaylistManager(tid); }
@@ -1015,14 +971,12 @@ $('#likeBtn').addEventListener('click', async ()=>{
   }catch(e){ toast('Ошибка'); }
 });
 
-// keyboard
 document.addEventListener('keydown', (e)=>{
   if(e.target.tagName==='INPUT') return;
   if(e.code==='Space'){ e.preventDefault(); togglePlay(); }
   if(e.code==='KeyM'){ e.preventDefault(); document.querySelector('.vol-icon').click(); }
 });
 
-// init
 (async()=>{
   audio.volume = 0.85;
   prevVolume = audio.volume;
@@ -1043,7 +997,6 @@ document.addEventListener('keydown', (e)=>{
   }catch(e){}
   updateRepeatUI();
   updateVolumeIcon();
-  // восстанавливаем сортировку и поиск до загрузки треков
   const savedState = getSavedState();
   if(savedState){
     try{
@@ -1054,7 +1007,6 @@ document.addEventListener('keydown', (e)=>{
   await loadPlaylists();
   await loadTracks();
   await loadStats();
-  // восстанавливаем плейлист/вид/скролл после загрузки данных
   if(savedState){
     try{
       if(savedState.viewMode) viewMode = savedState.viewMode;
@@ -1073,12 +1025,10 @@ document.addEventListener('keydown', (e)=>{
           renderPlaylists();
           updateUploadLabel();
         } else {
-          // плейлист удалён — сбрасываем на фонотеку
           activePlaylistId = null;
           viewMode = 'all';
         }
       }
-      // nav active
       if(viewMode && viewMode!=='playlist'){
         document.querySelectorAll('.nav-item').forEach(n=>{
           n.classList.toggle('active', n.dataset.view===viewMode);
@@ -1103,10 +1053,8 @@ document.addEventListener('keydown', (e)=>{
           viewSubtitle.textContent='Угольно-серый архив твоего звука';
         }
         if(viewMode!=='artists' && viewMode!=='albums'){
-          // уже отрендерено через applyFilter/load
         }
       }
-      // скролл
       requestAnimationFrame(()=>{
         setTimeout(()=>{
           const mainEl = document.querySelector('.main');

@@ -37,7 +37,6 @@ a{color:inherit}
 .muted{color:var(--text-muted)}
 .hidden{display:none !important}
 
-/* Tabler Icons */
 .ti{font-size:16px;line-height:1;vertical-align:middle}
 .ti-heart-filled{color:var(--ash-light)}
 .logo .ti{font-size:20px}
@@ -50,7 +49,6 @@ a{color:inherit}
 .play-btn .ti{font-size:18px;margin-left:1px}
 .picker h4 .ti{font-size:14px;margin-right:4px}
 
-/* TOPBAR */
 .topbar{
   height:64px;display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;border-bottom:1px solid var(--border);
@@ -94,7 +92,6 @@ a{color:inherit}
   color:var(--text);padding:8px 12px;border-radius:999px;font-size:12px
 }
 
-/* LAYOUT */
 .layout{flex:1 1 0;display:flex;min-height:0;overflow:hidden;position:relative;z-index:1}
 .sidebar{
   width:364px;flex-shrink:0;border-right:1px solid var(--border);
@@ -170,7 +167,6 @@ a{color:inherit}
 .quote p{font-size:12px;line-height:1.5;color:var(--ash-light);font-style:italic}
 .quote span{font-size:11px;color:var(--text-faint);font-family:var(--mono)}
 
-/* MAIN */
 .main{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;padding:22px 26px 88px;scrollbar-width:thin;scrollbar-color:var(--surface-3) transparent;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
 .main::-webkit-scrollbar,.sidebar::-webkit-scrollbar{width:6px}
 .main::-webkit-scrollbar-thumb,.sidebar::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:999px}
@@ -230,7 +226,6 @@ table.tracks{width:100%;border-collapse:collapse}
 .chip:hover{color:var(--text);border-color:var(--border-strong)}
 .chip.active{background:var(--ash-light);color:#0a0a0b;border-color:var(--ash-light)}
 
-/* PLAYER — compact */
 .player{
   position:fixed;bottom:0;left:0;right:0;height:68px;
   background:rgba(20,20,22,.94);backdrop-filter:blur(16px);
@@ -272,7 +267,6 @@ table.tracks{width:100%;border-collapse:collapse}
   padding:12px 16px;border-radius:10px;font-size:13px;color:var(--text);z-index:50;
   box-shadow:0 10px 30px rgba(0,0,0,.4)
 }
-/* Custom modal — ash confirm */
 .modal-overlay{
   position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   background:rgba(0,0,0,.62);backdrop-filter:blur(8px);
@@ -302,7 +296,6 @@ table.tracks{width:100%;border-collapse:collapse}
 .btn.danger:hover{background:#4a2d2d;border-color:#7a4545;color:#fff}
 .modal-overlay.hidden{display:none !important}
 
-/* range styling */
 input[type="range"]{
   -webkit-appearance:none;appearance:none;height:4px;background:var(--surface-3);border-radius:999px;outline:none
 }

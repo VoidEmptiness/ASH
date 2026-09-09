@@ -12,8 +12,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 COVERS_DIR.mkdir(parents=True, exist_ok=True)
 
 SUPPORTED_EXTENSIONS = {".mp3", ".flac", ".wav", ".ogg", ".m4a", ".aac", ".opus", ".wma"}
-MAX_UPLOAD_SIZE = 500 * 1024 * 1024  # 500 MB
+MAX_UPLOAD_SIZE = 500 * 1024 * 1024
 
-# Системные плейлисты
 LIKED_SONGS_NAME = "Liked Songs"
 DEFAULT_PLAYLIST_NAME = "Из пепла"

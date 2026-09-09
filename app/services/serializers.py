@@ -1,4 +1,3 @@
-"""Сериализация треков/альбомов с cover_url."""
 from ..models import Track, Album
 
 
@@ -32,7 +31,6 @@ def serialize_track(t: Track) -> dict:
 def album_cover_url(a: Album) -> str | None:
     if getattr(a, "cover_path", None):
         return f"/api/albums/{a.id}/cover"
-    # fallback: первая обложка трека альбома
     try:
         tracks = list(getattr(a, "tracks", []) or [])
         for t in tracks:

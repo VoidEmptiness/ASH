@@ -7,7 +7,6 @@ engine = create_engine(
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 )
 
-# SQLite: включаем foreign_keys и WAL для корректных каскадов и конкурентности
 if "sqlite" in DATABASE_URL:
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragma(dbapi_connection, connection_record):

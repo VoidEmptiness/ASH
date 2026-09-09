@@ -1,4 +1,3 @@
-"""Отдача обложек треков и альбомов."""
 import mimetypes
 from pathlib import Path
 
@@ -57,7 +56,6 @@ def get_album_cover(
     p = cover_file_response_path(getattr(alb, "cover_path", None))
     if p:
         return _file_response(p)
-    # fallback: первая обложка трека альбома
     first = (
         db.query(Track)
         .filter(Track.album_id == album_id, Track.cover_path.isnot(None))

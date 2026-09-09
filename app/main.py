@@ -1,7 +1,3 @@
-"""Точка входа FastAPI — только wiring (как в Video-Library/app/main.py).
-
-Вся бизнес-логика живёт в app/services/*, HTTP-слой — в app/routes/*.
-"""
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -19,12 +15,10 @@ from .services.storage import ensure_playlist_folders, get_playlist_folder
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup — инициализация БД и фонотеки
     init_db()
     db = SessionLocal()
     try:
         scan_music_folder(db)
-        # ensure default playlists
         if not db.query(Playlist).filter(Playlist.name == DEFAULT_PLAYLIST_NAME).first():
             p = Playlist(name=DEFAULT_PLAYLIST_NAME, description="Автоматический плейлист — всё из библиотеки", cover_color="#3a3a3a")
             db.add(p)
@@ -34,18 +28,16 @@ async def lifespan(app: FastAPI):
             ensure_playlist_folders(db)
         else:
             ensure_playlist_folders(db)
-        # Liked Songs — всегда существует, без папки на диске, неудаляемый
         if not db.query(Playlist).filter(Playlist.name == LIKED_SONGS_NAME).first():
             liked = Playlist(name=LIKED_SONGS_NAME, description="Понравившиеся треки", cover_color="#d6d3cf", folder=None)
             db.add(liked)
             db.commit()
         else:
-            # миграция: перекрашиваем Liked Songs из красного в пепельный
             liked = db.query(Playlist).filter(Playlist.name == LIKED_SONGS_NAME).first()
             if liked and liked.cover_color == "#e63946":
                 liked.cover_color = "#d6d3cf"
                 db.commit()
-        for t in db.query(Track).filter(Track.album_id == None).all():  # noqa: E711
+        for t in db.query(Track).filter(Track.album_id == None).all():
             if t.album and t.album != "Unknown Album":
                 alb = get_or_create_album(db, t.album, t.artist, t.year, t.genre)
                 if alb:
@@ -69,13 +61,12 @@ app.mount(
     name="static",
 )
 
-# Роуты — как в Video-Library: каждый домен в своём модуле
-from .routes.pages import router as pages_router  # noqa: E402
-from .routes.stats import router as stats_router  # noqa: E402
-from .routes.tracks import router as tracks_router  # noqa: E402
-from .routes.albums import router as albums_router  # noqa: E402
-from .routes.playlists import router as playlists_router  # noqa: E402
-from .routes.covers import router as covers_router  # noqa: E402
+from .routes.pages import router as pages_router
+from .routes.stats import router as stats_router
+from .routes.tracks import router as tracks_router
+from .routes.albums import router as albums_router
+from .routes.playlists import router as playlists_router
+from .routes.covers import router as covers_router
 
 app.include_router(pages_router)
 app.include_router(stats_router)

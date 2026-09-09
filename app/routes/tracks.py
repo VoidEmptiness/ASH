@@ -98,7 +98,6 @@ def delete_track(track_id: int, db: Session = Depends(get_db)):
         p.unlink(missing_ok=True)
     except Exception:
         pass
-    # удаляем файл обложки, если больше не используется другими треками
     try:
         if cover_name:
             still_used = db.query(Track).filter(Track.cover_path == cover_name, Track.id != t.id).first()
@@ -231,7 +230,6 @@ def upload_tracks(files: List[UploadFile] = File(...), playlist_id: Optional[int
         db.add(track)
         db.commit()
         db.refresh(track)
-        # обложка: извлекаем после получения id
         try:
             cover_name = save_cover_for_track(track.id, dest)
             if cover_name:

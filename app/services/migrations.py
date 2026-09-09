@@ -1,11 +1,9 @@
-"""Миграции схемы без alembic (аналог services/migrations.py в Video-Library)."""
 from sqlalchemy import inspect, text
 
 from ..database import Base, engine
 
 
 def ensure_schema():
-    """Добавляет недостающие колонки/таблицы если их нет."""
     try:
         inspector = inspect(engine)
         if inspector.has_table("playlists"):

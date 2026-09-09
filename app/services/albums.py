@@ -1,4 +1,3 @@
-"""Операции с альбомами в БД."""
 from ..models import Album
 
 
@@ -10,5 +9,5 @@ def get_or_create_album(db, title: str, artist: str = "Unknown Artist", year=Non
         return album
     album = Album(title=title, artist=artist or "Unknown Artist", year=year, genre=genre)
     db.add(album)
-    db.flush()  # чтобы получить id без commit
+    db.flush()
     return album

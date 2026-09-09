@@ -1,4 +1,3 @@
-"""Сканирование фонотеки и синхронизация плейлистов с папками."""
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -12,7 +11,6 @@ from .storage import ensure_playlist_folders
 
 
 def ensure_playlists_from_folders(db: Session):
-    """Создаёт плейлисты для каждой папки в MUSIC_DIR, если их ещё нет в БД."""
     try:
         for folder_path in MUSIC_DIR.iterdir():
             if not folder_path.is_dir():
@@ -35,7 +33,6 @@ def ensure_playlists_from_folders(db: Session):
             pl = Playlist(name=candidate_name, description=f"Папка {rel}", cover_color="#2a2a2a", folder=rel)
             db.add(pl)
         db.commit()
-        # cleanup: удаляем плейлисты чьи папки удалены вручную с диска (кроме системных)
         for pl in db.query(Playlist).all():
             if pl.folder and pl.name not in (DEFAULT_PLAYLIST_NAME, LIKED_SONGS_NAME):
                 if not (MUSIC_DIR / pl.folder).exists():
@@ -46,7 +43,6 @@ def ensure_playlists_from_folders(db: Session):
 
 
 def sync_playlist_folder_tracks(db: Session):
-    """Синхронизирует содержимое плейлистов с файлами в их папках (добавляет недостающие)."""
     try:
         for pl in db.query(Playlist).all():
             if not pl.folder:
@@ -66,7 +62,6 @@ def sync_playlist_folder_tracks(db: Session):
 
 
 def scan_music_folder(db: Session):
-    """Сканирует MUSIC_DIR и добавляет недостающие треки в БД."""
     ensure_playlist_folders(db)
     ensure_playlists_from_folders(db)
     existing = {t.filename for t in db.query(Track).all()}
@@ -100,7 +95,7 @@ def scan_music_folder(db: Session):
             genre=meta.get("genre"),
         )
         db.add(track)
-        db.flush()  # нужен id для имени файла обложки
+        db.flush()
         try:
             cover_name = save_cover_for_track(track.id, f)
             if cover_name:
@@ -112,9 +107,8 @@ def scan_music_folder(db: Session):
         except Exception as e:
             print(f"[ASH] scan cover error {rel}: {e}")
         added += 1
-    # backfill: у старых треков без cover_path пробуем извлечь
     try:
-        missing = db.query(Track).filter((Track.cover_path == None) | (Track.cover_path == "")).all()  # noqa: E711
+        missing = db.query(Track).filter((Track.cover_path == None) | (Track.cover_path == "")).all()
         for t in missing:
             p = Path(t.filepath)
             if not p.exists():
@@ -133,8 +127,7 @@ def scan_music_folder(db: Session):
                                 alb.cover_path = album_cover
             except Exception as e:
                 print(f"[ASH] backfill cover error {t.filename}: {e}")
-        # backfill альбомов без обложки, но с треками у которых есть обложка
-        for alb in db.query(Album).filter((Album.cover_path == None) | (Album.cover_path == "")).all():  # noqa: E711
+        for alb in db.query(Album).filter((Album.cover_path == None) | (Album.cover_path == "")).all():
             try:
                 first = db.query(Track).filter(Track.album_id == alb.id, Track.cover_path.isnot(None)).first()
                 if first and first.cover_path:
@@ -146,7 +139,6 @@ def scan_music_folder(db: Session):
         db.commit()
     except Exception as e:
         print(f"[ASH] backfill covers error: {e}")
-    # remove missing files — проверяем и по абсолютному пути и по относительному (для совместимости Docker/host)
     for t in db.query(Track).all():
         exists = Path(t.filepath).exists() or (MUSIC_DIR / t.filename).exists()
         if not Path(t.filepath).exists() and (MUSIC_DIR / t.filename).exists():
@@ -154,20 +146,17 @@ def scan_music_folder(db: Session):
         if not exists:
             db.delete(t)
     db.commit()
-    # чистим пустые альбомы без треков — одним запросом
     empty = db.query(Album).filter(~Album.tracks.any()).all()
     if empty:
         for alb in empty:
             db.delete(alb)
         db.commit()
-    # чистим orphan-обложки (треки удалены, файлы остались)
     try:
         from ..config import COVERS_DIR as _CD
 
         if _CD.exists():
             used = {t.cover_path for t in db.query(Track.cover_path).all() if t[0]}
             used |= {f"album_{a.id}{Path(a.cover_path).suffix}" if a.cover_path else "" for a in db.query(Album).all()}
-            # точнее: собираем все cover_path альбомов
             used_album = {a.cover_path for a in db.query(Album).all() if a.cover_path}
             used |= used_album
             for f in _CD.iterdir():
