@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASH — Auralis Self Hosted</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/static/css/style.css?v=7" />
+</head>
+<body>
+  <div class="grain"></div>
+
+  <!-- Header -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"><i class="ti ti-wave-sine"></i></div>
+      <div>
+        <h1>ASH</h1>
+        <p>Auralis Self Hosted</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input id="search" type="text" placeholder="Поиск — трек, артист, альбом..." autocomplete="off" />
+      </div>
+      <button id="scanBtn" class="btn ghost" title="Пересканировать папку"><i class="ti ti-refresh"></i> Скан</button>
+      <label for="uploadInput" id="uploadLabel" class="btn primary"><i class="ti ti-upload"></i> Загрузить</label>
+      <input id="uploadInput" type="file" accept=".mp3,.flac,.wav,.ogg,.m4a,.aac,.opus" multiple hidden />
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav class="nav">
+        <button class="nav-item active" data-view="all"><i class="ti ti-library"></i> Вся фонотека</button>
+        <button class="nav-item" data-view="recent"><i class="ti ti-clock-hour-3"></i> Недавнее</button>
+        <button class="nav-item" data-view="artists"><i class="ti ti-microphone"></i> Исполнители</button>
+        <button class="nav-item" data-view="albums"><i class="ti ti-disc"></i> Альбомы</button>
+      </nav>
+
+      <div class="section">
+        <div class="section-head">
+          <h3>Плейлисты</h3>
+          <button id="newPlaylistBtn" class="mini-btn"><i class="ti ti-plus"></i></button>
+        </div>
+        <div id="playlistList" class="playlist-list">
+          <!-- injected -->
+        </div>
+        <div id="newPlaylistForm" class="new-pl-form hidden">
+          <input id="plName" placeholder="Название плейлиста" />
+          <div class="color-row">
+            <span>цвет:</span>
+            <input id="plColor" type="color" value="#3a3a3a" />
+            <button id="createPlBtn" class="btn small"><i class="ti ti-check"></i> Создать</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="stat"><span id="statTracks">—</span><label>треков</label></div>
+        <div class="stat"><span id="statDuration">—</span><label>время</label></div>
+        <div class="stat"><span id="statPlaylists">—</span><label>плейлистов</label></div>
+      </div>
+    </aside>
+    <div id="sidebarResizer" class="resizer" title="Тяни чтобы изменить ширину"></div>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <h2 id="viewTitle">Вся фонотека</h2>
+          <p id="viewSubtitle" class="muted">Угольно-серый архив твоего звука</p>
+        </div>
+        <div class="view-actions">
+          <select id="sortSelect" class="select">
+            <option value="created_at-desc">Сначала новые</option>
+            <option value="created_at-asc">Сначала старые</option>
+            <option value="title-asc">По названию А-Я</option>
+            <option value="artist-asc">По артисту</option>
+            <option value="duration-desc">По длительности</option>
+          </select>
+          <button id="shuffleBtn" class="btn ghost"><i class="ti ti-arrows-shuffle"></i> Перемешать</button>
+          <button id="playAllBtn" class="btn primary"><i class="ti ti-player-play"></i> Играть всё</button>
+        </div>
+      </div>
+
+      <div id="artistsView" class="chips-view hidden"></div>
+      <div id="albumsView" class="chips-view hidden"></div>
+
+      <div class="table-wrap">
+        <table class="tracks">
+          <thead>
+            <tr>
+              <th style="width:44px">#</th>
+              <th>Трек</th>
+              <th>Альбом</th>
+              <th style="width:90px">Длительность</th>
+              <th style="width:110px"></th>
+            </tr>
+          </thead>
+          <tbody id="trackBody">
+            <!-- rows -->
+          </tbody>
+        </table>
+        <div id="emptyState" class="empty hidden">
+          <div class="empty-icon"><i class="ti ti-music-off"></i></div>
+          <h3>Пусто, как после огня</h3>
+          <p>Загрузи музыку или нажми «Скан» чтобы найти файлы в <code>/music</code></p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Player -->
+  <footer class="player">
+    <div class="player-left">
+      <div class="cover" id="playerCover"><i class="ti ti-music"></i></div>
+      <div class="meta">
+        <strong id="playerTitle">Ничего не играет</strong>
+        <span id="playerArtist" class="muted">Выбери трек из библиотеки</span>
+      </div>
+      <button id="likeBtn" class="icon-btn" title="Добавить в плейлист"><i class="ti ti-heart"></i></button>
+    </div>
+
+    <div class="player-center">
+      <div class="controls">
+        <button id="prevBtn" class="icon-btn"><i class="ti ti-player-skip-back"></i></button>
+        <button id="playBtn" class="play-btn"><i class="ti ti-player-play"></i></button>
+        <button id="nextBtn" class="icon-btn"><i class="ti ti-player-skip-forward"></i></button>
+        <button id="repeatBtn" class="icon-btn" title="Повтор"><i class="ti ti-repeat"></i></button>
+      </div>
+      <div class="progress-wrap">
+        <span id="timeCurrent" class="time">0:00</span>
+        <input id="progress" type="range" min="0" max="100" value="0" />
+        <span id="timeTotal" class="time">0:00</span>
+      </div>
+    </div>
+
+    <div class="player-right">
+      <span class="vol-icon"><i class="ti ti-volume"></i></span>
+      <input id="volume" type="range" min="0" max="100" value="85" />
+      <button id="queueBtn" class="icon-btn" title="Очередь"><i class="ti ti-list"></i></button>
+    </div>
+    <audio id="audio" preload="metadata"></audio>
+  </footer>
+
+  <!-- Playlist manager / Liked Songs picker -->
+  <div id="plPicker" class="picker hidden">
+    <h4><i class="ti ti-playlist-add"></i> Управление плейлистами</h4>
+    <div id="pickerList"></div>
+    <div class="modal-actions" style="margin-top:14px;justify-content:flex-end">
+      <button id="pickerCancel" class="btn ghost">Отмена</button>
+      <button id="pickerSave" class="btn primary">Сохранить</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Custom Confirm Modal -->
+  <div id="confirmModal" class="modal-overlay hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="modal-icon"><i class="ti ti-alert-triangle"></i></div>
+      <h3 id="confirmTitle">Подтвердите действие</h3>
+      <p id="confirmMessage">Вы уверены?</p>
+      <div class="modal-actions">
+        <button id="confirmCancel" class="btn ghost">Отмена</button>
+        <button id="confirmOk" class="btn primary danger">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=7"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Git / CI — не нужны в контексте сборки
+.git/
+.gitignore
+.github/
+
+# Virtualenvs — зависимости ставятся через pip install в образе
+venv/
+.venv/
+env/
+ENV/
+
+# Env — секреты не должны попадать в образ
+.env
+.env.*
+
+# App data и фонотека — монтируются как volumes в docker-compose.yml,
+# копировать их в образ не нужно (Dockerfile сам делает mkdir)
+data/
+music/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.mp3
+*.flac
+*.wav
+*.ogg
+*.m4a
+*.aac
+*.opus
+*.wma
+
+# Dev / docs / infra — не нужны внутри образа
+docker-compose*.yml
+README.md
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+logs/
