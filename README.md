@@ -95,6 +95,7 @@ git clone https://github.com/VoidEmptiness/ASH.git && cd ASH && docker compose u
 - [ ] Синхронизация офлайн музыки между устройствами
 - [x] Обложки к трекам (embedded APIC/covr/pictures + folder.jpg, `/api/covers/{id}`, `/api/albums/{id}/cover`).
 - [ ] Поддержка клипов, просмотр клипов.
+- [ ] Favorite Songs сделать добавление в плейлисты по типу Spotify
 
 
 ---
