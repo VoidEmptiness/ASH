@@ -18,6 +18,8 @@ class TrackResponse(TrackBase):
     created_at: Optional[datetime] = None
     bitrate: Optional[int] = None
     album_id: Optional[int] = None
+    cover_url: Optional[str] = None
+    has_cover: bool = False
 
     class Config:
         from_attributes = True
@@ -29,6 +31,8 @@ class AlbumResponse(BaseModel):
     year: Optional[str] = None
     genre: Optional[str] = None
     cover_color: str
+    cover_url: Optional[str] = None
+    has_cover: bool = False
     created_at: Optional[datetime] = None
     track_count: int = 0
     tracks: List[TrackResponse] = []

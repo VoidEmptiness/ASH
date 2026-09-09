@@ -183,15 +183,24 @@ async function loadAlbums(){
     albumsView.innerHTML = '<span class="muted">Нет альбомов</span>';
     return;
   }
+  albumsView.classList.add('albums-grid');
   // поддержка старого формата (strings) и нового (AlbumResponse)
   if(typeof arr[0] === 'string'){
     albumsView.innerHTML = arr.map(a=>`<button class="chip" data-album="${escapeAttr(a)}">${escapeHtml(a)}</button>`).join('');
   } else {
-    albumsView.innerHTML = arr.map(a=>`<button class="chip" data-album-id="${a.id}" data-album="${escapeAttr(a.title)}"><i class="ti ti-disc"></i> ${escapeHtml(a.title)} <span style="opacity:.6">— ${escapeHtml(a.artist)} • ${a.track_count}</span></button>`).join('');
+    albumsView.innerHTML = arr.map(a=>{
+      const cover = a.cover_url
+        ? `<img src="${escapeAttr(a.cover_url)}" alt="" loading="lazy" onerror="this.remove()" />`
+        : `<i class="ti ti-disc"></i>`;
+      return `<button class="album-card" data-album-id="${a.id}" data-album="${escapeAttr(a.title)}">
+        <div class="album-cover">${cover}</div>
+        <div class="album-meta"><strong>${escapeHtml(a.title)}</strong><span>${escapeHtml(a.artist)} • ${a.track_count}</span></div>
+      </button>`;
+    }).join('');
   }
-  albumsView.querySelectorAll('.chip').forEach(ch=>{
+  albumsView.querySelectorAll('.chip, .album-card').forEach(ch=>{
     ch.addEventListener('click', async ()=>{
-      albumsView.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      albumsView.querySelectorAll('.chip, .album-card').forEach(c=>c.classList.remove('active'));
       ch.classList.add('active');
       const albumId = ch.dataset.albumId;
       const albumTitle = ch.dataset.album;
@@ -326,9 +335,12 @@ function renderTracks(){
     const inLiked = playlists.find(p=>p.name===LIKED_SONGS_NAME)?.tracks.some(x=>x.id===t.id);
     const heartIcon = inLiked ? '<i class="ti ti-heart-filled" style="color:var(--ash-light)"></i>' : (inAny ? '<i class="ti ti-heart-filled" style="color:var(--ash-light)"></i>' : '<i class="ti ti-heart"></i>');
     const heartTitle = inLiked ? 'В Liked Songs — убрать' : (inAny ? 'В плейлисте — управление' : 'Добавить в Liked Songs');
+    const artHtml = t.cover_url
+      ? `<img src="${escapeAttr(t.cover_url)}" alt="" loading="lazy" onerror="this.remove()" />`
+      : (isActive?'<i class="ti ti-player-play"></i>':'<i class="ti ti-music"></i>');
     return `<tr class="${isActive?'active':''}" data-id="${t.id}" data-idx="${i}">
       <td><div class="cell-title"><span class="idx">${String(i+1).padStart(2,'0')}</span>
-        <div class="art">${isActive?'<i class="ti ti-player-play"></i>':'<i class="ti ti-music"></i>'}</div></div></td>
+        <div class="art">${artHtml}</div></div></td>
       <td><div class="cell-title" style="flex-direction:column;align-items:flex-start;gap:2px">
         <strong>${escapeHtml(t.title)}</strong><span>${escapeHtml(t.artist)} • ${escapeHtml(t.year||'—')}</span></div></td>
       <td class="muted">${escapeHtml(t.album)}</td>
@@ -425,6 +437,18 @@ function renderTracks(){
 }
 
 // --- Player ---
+function setPlayerCover(t){
+  const el = $('#playerCover');
+  if(!el) return;
+  if(t && t.cover_url){
+    el.innerHTML = `<img src="${escapeAttr(t.cover_url)}" alt="" onerror="this.remove()" />`;
+  } else if(t){
+    el.textContent = t.title[0]?.toUpperCase() || '';
+    if(!el.textContent) el.innerHTML = '<i class="ti ti-music"></i>';
+  } else {
+    el.innerHTML = '<i class="ti ti-music"></i>';
+  }
+}
 function playAt(idx){
   if(idx<0 || idx>=queue.length) return;
   currentIdx = idx;
@@ -433,8 +457,7 @@ function playAt(idx){
   audio.play().catch(()=>{});
   $('#playerTitle').textContent = t.title;
   $('#playerArtist').textContent = `${t.artist} — ${t.album}`;
-  $('#playerCover').textContent = t.title[0]?.toUpperCase() || '';
-  if(!$('#playerCover').textContent) $('#playerCover').innerHTML = '<i class="ti ti-music"></i>';
+  setPlayerCover(t);
   $('#playBtn').innerHTML = '<i class="ti ti-player-pause"></i>';
   renderTracks();
   updatePlayerHeart();

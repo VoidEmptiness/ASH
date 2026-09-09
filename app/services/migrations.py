@@ -20,6 +20,16 @@ def ensure_schema():
                 with engine.begin() as conn:
                     conn.execute(text("ALTER TABLE tracks ADD COLUMN album_id INTEGER REFERENCES albums(id)"))
                 print("[ASH] migrated tracks.album_id")
+            if "cover_path" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE tracks ADD COLUMN cover_path VARCHAR"))
+                print("[ASH] migrated tracks.cover_path")
+        if inspector.has_table("albums"):
+            cols = [c["name"] for c in inspector.get_columns("albums")]
+            if "cover_path" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE albums ADD COLUMN cover_path VARCHAR"))
+                print("[ASH] migrated albums.cover_path")
     except Exception as e:
         print(f"[ASH] ensure_schema error: {e}")
 

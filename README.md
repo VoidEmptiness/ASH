@@ -93,7 +93,7 @@ git clone https://github.com/VoidEmptiness/ASH.git && cd ASH && docker compose u
 ## TODO / Идеи
 
 - [ ] Синхронизация офлайн музыки между устройствами
-- [ ] Обложки к трекам.
+- [x] Обложки к трекам (embedded APIC/covr/pictures + folder.jpg, `/api/covers/{id}`, `/api/albums/{id}/cover`).
 - [ ] Поддержка клипов, просмотр клипов.
 
 

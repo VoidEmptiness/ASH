@@ -75,9 +75,11 @@ from .routes.stats import router as stats_router  # noqa: E402
 from .routes.tracks import router as tracks_router  # noqa: E402
 from .routes.albums import router as albums_router  # noqa: E402
 from .routes.playlists import router as playlists_router  # noqa: E402
+from .routes.covers import router as covers_router  # noqa: E402
 
 app.include_router(pages_router)
 app.include_router(stats_router)
 app.include_router(tracks_router)
 app.include_router(albums_router)
 app.include_router(playlists_router)
+app.include_router(covers_router)

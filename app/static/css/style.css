@@ -192,7 +192,8 @@ table.tracks{width:100%;border-collapse:collapse}
 .tracks tbody tr.active{background:var(--surface-2);border-left:2px solid var(--ash-light)}
 .cell-title{display:flex;align-items:center;gap:12px}
 .cell-title .idx{font-family:var(--mono);font-size:11px;color:var(--text-faint);width:18px}
-.cell-title .art{width:38px;height:38px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--ash);font-size:14px;flex-shrink:0}
+.cell-title .art{width:38px;height:38px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--ash);font-size:14px;flex-shrink:0;overflow:hidden}
+.cell-title .art img{width:100%;height:100%;object-fit:cover;display:block}
 .cell-title strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
 .cell-title span{font-size:11px;color:var(--text-muted)}
 .actions{display:flex;gap:6px;justify-content:flex-end}
@@ -213,6 +214,15 @@ table.tracks{width:100%;border-collapse:collapse}
 .empty code{font-family:var(--mono);background:var(--surface);padding:2px 6px;border-radius:6px;border:1px solid var(--border)}
 
 .chips-view{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.chips-view.albums-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.album-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;text-align:left;color:var(--text);padding:0;transition:.15s}
+.album-card:hover{border-color:var(--border-strong);transform:translateY(-2px)}
+.album-card.active{border-color:var(--ash-light)}
+.album-cover{aspect-ratio:1/1;background:var(--surface-2);display:grid;place-items:center;color:var(--ash);font-size:28px;overflow:hidden}
+.album-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.album-meta{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.album-meta strong{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.album-meta span{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .chip{
   padding:10px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--border);
   cursor:pointer;font-size:13px;color:var(--text-muted);transition:.15s
@@ -228,7 +238,8 @@ table.tracks{width:100%;border-collapse:collapse}
   justify-content:space-between;padding:0 14px;gap:12px;z-index:30;
 }
 .player-left{display:flex;align-items:center;gap:10px;min-width:200px;flex:0 1 320px;min-width:0}
-.cover{width:44px;height:44px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--ash);flex-shrink:0}
+.cover{width:44px;height:44px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--ash);flex-shrink:0;overflow:hidden;font-weight:700;font-size:18px}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
 .meta{flex:1 1 auto;min-width:0;overflow:hidden}
 .meta strong{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.2}
 .meta span{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}

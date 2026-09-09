@@ -11,8 +11,11 @@ from ..models import Track, Playlist, Album
 from ..schemas import TrackResponse
 from ..services.albums import get_or_create_album
 from ..services.metadata import extract_metadata
+from ..services.covers import save_cover_for_track, save_cover_for_album
+from ..services.serializers import serialize_track
 from ..services.search import normalize_text, token_matches
 from ..services.storage import file_iterator, get_playlist_folder
+from ..config import COVERS_DIR
 
 router = APIRouter(tags=["tracks"])
 
@@ -70,7 +73,7 @@ def list_tracks(
 
             tracks.sort(key=rank)
 
-    return tracks
+    return [serialize_track(t) for t in tracks]
 
 
 @router.get("/api/tracks/{track_id}", response_model=TrackResponse)
@@ -78,7 +81,7 @@ def get_track(track_id: int, db: Session = Depends(get_db)):
     t = db.query(Track).filter(Track.id == track_id).first()
     if not t:
         raise HTTPException(404, "Трек не найден")
-    return t
+    return serialize_track(t)
 
 
 @router.delete("/api/tracks/{track_id}")
@@ -87,11 +90,20 @@ def delete_track(track_id: int, db: Session = Depends(get_db)):
     if not t:
         raise HTTPException(404, "Трек не найден")
     album_id = t.album_id
+    cover_name = getattr(t, "cover_path", None)
     try:
         p = Path(t.filepath)
         if not p.exists():
             p = MUSIC_DIR / t.filename
         p.unlink(missing_ok=True)
+    except Exception:
+        pass
+    # удаляем файл обложки, если больше не используется другими треками
+    try:
+        if cover_name:
+            still_used = db.query(Track).filter(Track.cover_path == cover_name, Track.id != t.id).first()
+            if not still_used:
+                (COVERS_DIR / Path(cover_name).name).unlink(missing_ok=True)
     except Exception:
         pass
     db.delete(t)
@@ -219,6 +231,21 @@ def upload_tracks(files: List[UploadFile] = File(...), playlist_id: Optional[int
         db.add(track)
         db.commit()
         db.refresh(track)
+        # обложка: извлекаем после получения id
+        try:
+            cover_name = save_cover_for_track(track.id, dest)
+            if cover_name:
+                track.cover_path = cover_name
+                db.commit()
+                db.refresh(track)
+                if album_obj and not getattr(album_obj, "cover_path", None):
+                    album_cover = save_cover_for_album(album_obj.id, cover_name)
+                    if album_cover:
+                        album_obj.cover_path = album_cover
+                        db.commit()
+                        db.refresh(track)
+        except Exception as e:
+            print(f"[ASH] upload cover error: {e}")
         created.append(track)
 
     if target_playlist and created:
@@ -227,7 +254,7 @@ def upload_tracks(files: List[UploadFile] = File(...), playlist_id: Optional[int
                 target_playlist.tracks.append(t)
         db.commit()
 
-    return created
+    return [serialize_track(t) for t in created]
 
 
 @router.get("/api/artists")

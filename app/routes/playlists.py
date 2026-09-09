@@ -11,6 +11,7 @@ from ..models import Track, Playlist, Album
 from ..schemas import PlaylistCreate, PlaylistResponse, PlaylistUpdate
 from ..services.library import ensure_playlists_from_folders, sync_playlist_folder_tracks
 from ..services.metadata import safe_folder_name
+from ..services.serializers import serialize_track
 from ..services.storage import get_playlist_folder
 
 router = APIRouter(tags=["playlists"])
@@ -24,7 +25,7 @@ def playlist_to_response(pl: Playlist):
         "cover_color": pl.cover_color,
         "folder": pl.folder,
         "created_at": pl.created_at,
-        "tracks": pl.tracks,
+        "tracks": [serialize_track(t) for t in pl.tracks],
         "track_count": len(pl.tracks),
     }
 

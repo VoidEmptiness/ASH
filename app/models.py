@@ -19,6 +19,7 @@ class Album(Base):
     year = Column(String, nullable=True)
     genre = Column(String, nullable=True)
     cover_color = Column(String, default="#2a2a2a")
+    cover_path = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     tracks = relationship("Track", back_populates="album_obj")
